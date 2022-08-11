@@ -10,10 +10,13 @@ gameOver = False
 window = tkinter.Tk()
 model = None
 model_file = None
+epochs = 1
 
-def playMineField(_model_file = None):
+def playMineField(_model_file = None, _epochs = 1):
     global model
     global model_file
+    global epochs
+    epochs = _epochs
     model_file = _model_file
     if model_file != None:
         model = load_model(model_file)
@@ -21,7 +24,6 @@ def playMineField(_model_file = None):
     layMines()
     window.configure(bg = "lightgrey")
     startField(window)
-    print(seenField)
     window.mainloop()
 
 def layMines():
@@ -61,9 +63,10 @@ def startField(window):
                 for y in range(-1, 2):
                     for x in range(-1, 2):
                         if rowNum+y > -1 and rowNum+y < 10 and columnNum+x > -1 and columnNum+x < 10:
-                            seenField[rowNum+y][columnNum+x] = findNeighborMines(rowNum+y, columnNum+x)
-                            startEmpty += 1
-                            toClear -= 1
+                            if seenField[rowNum+y][columnNum+x] == -2:
+                                seenField[rowNum+y][columnNum+x] = findNeighborMines(rowNum+y, columnNum+x)
+                                startEmpty += 1
+                                toClear -= 1
             elif random.randint(1,100) < 25:
                 square = tkinter.Label(window, text = "    ", bg = "darkgreen")
             elif random.randint(1, 100) > 75:
@@ -103,6 +106,7 @@ def onClick(event):
     global toClear
     global window
     global gameOver
+    global epochs
     if gameOver:
         window.quit()
     if toClear == 0:
@@ -136,7 +140,7 @@ def onClick(event):
                 oneHotClick = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
                 oneHotClick[0][row] = 1
                 oneHotClick[0][column+10] = 1
-                model.fit(inputData, oneHotClick, epochs = 2)
+                model.fit(inputData, oneHotClick, epochs = epochs)
                 model.save(model_file)
 
                 inputData[0][row][column] = findNeighborMines(row, column)
@@ -147,6 +151,11 @@ def onClick(event):
                     pass
                 else:
                     suggestSquare(output[0].index(max(output[0][0:9])), output[0].index(max(output[0][10:19]))-10)
+                    debugOut = [0]*21
+                    debugOut[output[0].index(max(output[0][0:9]))] = 1
+                    debugOut[output[0].index(max(output[0][10:19]))] = 1
+                    print(str(debugOut))
+                    print(oneHotClick)
             else:
                 suggestSquare(random.randint(0, 9), random.randint(0, 9))
 
